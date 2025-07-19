@@ -1,46 +1,30 @@
-import { Link } from 'react-router-dom'
-import {getDocs, collection, deleteDoc, doc, onSnapshot} from 'firebase/firestore';
-import {db} from '../firebase/config'
+import { Link, useNavigate } from 'react-router-dom'
 import { useEffect,useState } from 'react';
 import DeleteIcon from '../assets/delete.svg'
+import EditIcon from '../assets/edit.svg'
 
 // styles
 import './Home.css'
+import {deleteArticle, getArticles} from "../services/articleService";
 
 export default function Home() {
 
   const [articles, setArticles] = useState(null);
+  const [search, setSearch] = useState(null)
+
+  const navigate = useNavigate()
 
   useEffect(() => {
-    const ref = collection(db, 'articles');
-
-    onSnapshot(ref, (snapshot)=>{
-        console.log(snapshot);
-        let results = []
-         snapshot.docs.forEach(doc => {
-           results.push({id: doc.id, ...doc.data()});
-         });
-        setArticles(results);
-      })
-
-    getDocs(ref)
-      .then((snapshot)=>{
-        let results = []
-        console.log(snapshot)
-        snapshot.docs.forEach(doc => {
-          results.push({id: doc.id, ...doc.data()});
-        });
-        setArticles(results);
-      })    
-  },[])
-
+      const unsubscribe = getArticles(setArticles)
+      return ()=> unsubscribe();
+   },[])
   
   const handleDelete = async (id) => {
-    const ref = doc(db, 'articles', id)
-      //loading = true
-    deleteDoc(ref).then(
-        //loading false;
-    );
+    await deleteArticle(id);
+  }
+
+  const handleEdit = async (id) => {
+    navigate(`/edit/${id}`)
   }
 
   return (
@@ -55,6 +39,11 @@ export default function Home() {
             className="icon"
             onClick={() => handleDelete(article.id)}
             src={DeleteIcon} alt="delete icon" 
+          />
+          <img 
+            className="icon"
+            onClick={() => handleEdit(article.id)}
+            src={EditIcon} alt="edit icon" 
           />
         </div>
       ))}
